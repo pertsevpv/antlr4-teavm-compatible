@@ -12,7 +12,7 @@
 		<version>4.11.2-SNAPSHOT</version>
 		<relativePath>../../pom.xml</relativePath>
 	</parent>
-	<artifactId>antlr4-runtime</artifactId>
+	<artifactId>antlr4-runtime-teavm-compatible</artifactId>
 	<name>ANTLR 4 Runtime</name>
 	<description>The ANTLR 4 Runtime</description>
 

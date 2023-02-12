@@ -11,26 +11,21 @@ import org.antlr.v4.runtime.atn.ATNSimulator;
 import org.antlr.v4.runtime.atn.ParseInfo;
 import org.antlr.v4.runtime.misc.Utils;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.WeakHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.*;
 
 public abstract class Recognizer<Symbol, ATNInterpreter extends ATNSimulator> {
 	public static final int EOF=-1;
 
 	private static final Map<Vocabulary, Map<String, Integer>> tokenTypeMapCache =
-		new WeakHashMap<Vocabulary, Map<String, Integer>>();
+		new HashMap<Vocabulary, Map<String, Integer>>();
 	private static final Map<String[], Map<String, Integer>> ruleIndexMapCache =
-		new WeakHashMap<String[], Map<String, Integer>>();
+		new HashMap<String[], Map<String, Integer>>();
 
-
-	private List<ANTLRErrorListener> _listeners =
-		new CopyOnWriteArrayList<ANTLRErrorListener>() {{
+	private List<ANTLRErrorListener> _listeners = Collections.synchronizedList(
+		new ArrayList<ANTLRErrorListener>() {{
 			add(ConsoleErrorListener.INSTANCE);
-		}};
+		}}
+	);
 
 	protected ATNInterpreter _interp;
 

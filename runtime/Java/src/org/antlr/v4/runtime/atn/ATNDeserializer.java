@@ -53,7 +53,7 @@ public class ATNDeserializer {
 		int version = data[p++];
 		if (version != SERIALIZED_VERSION) {
 			String reason = String.format(Locale.getDefault(), "Could not deserialize ATN with version %d (expected %d).", version, SERIALIZED_VERSION);
-			throw new UnsupportedOperationException(new InvalidClassException(ATN.class.getName(), reason));
+			throw new UnsupportedOperationException(ATN.class.getName() + ": " + reason);
 		}
 
 		ATNType grammarType = ATNType.values()[data[p++]];
