@@ -23,7 +23,7 @@
     <dependencies>
 		<dependency>
 			<groupId>org.antlr</groupId>
-			<artifactId>antlr4-runtime</artifactId>
+			<artifactId>antlr4-runtime-teavm-compatible</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
