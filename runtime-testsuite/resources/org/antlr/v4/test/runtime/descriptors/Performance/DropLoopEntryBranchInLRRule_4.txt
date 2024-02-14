@@ -51,9 +51,9 @@ between X1 and X2 or between X3 and X4
 ;
 
 [skip]
-Python2
 Python3
 JavaScript
 TypeScript
 PHP
+Go
 

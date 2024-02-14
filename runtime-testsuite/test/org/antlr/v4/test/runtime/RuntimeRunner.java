@@ -49,6 +49,8 @@ public abstract class RuntimeRunner implements AutoCloseable {
 	private static String runtimeToolPath;
 	private static String compilerPath;
 
+	public final static String InputFileName = "input";
+
 	protected final String getCompilerPath() {
 		if (compilerPath == null) {
 			compilerPath = getCompilerName();
@@ -154,6 +156,13 @@ public abstract class RuntimeRunner implements AutoCloseable {
 		return runtimePath.toString() + FileSeparator + language;
 	}
 
+	// Allows any target to add additional options for the antlr tool such as the location of the output files
+	// which is useful for the Go target for instance to avoid having to move them before running the test
+	//
+	protected List<String> getTargetToolOptions(RunOptions ro) {
+		return null;
+	}
+
 	public State run(RunOptions runOptions) {
 		List<String> options = new ArrayList<>();
 		if (runOptions.useVisitor) {
@@ -162,6 +171,14 @@ public abstract class RuntimeRunner implements AutoCloseable {
 		if (runOptions.superClass != null && runOptions.superClass.length() > 0) {
 			options.add("-DsuperClass=" + runOptions.superClass);
 		}
+
+		// See if the target wants to add tool options.
+		//
+		List<String> targetOpts = getTargetToolOptions(runOptions);
+		if (targetOpts != null) {
+			options.addAll(targetOpts);
+		}
+
 		ErrorQueue errorQueue = Generator.antlrOnString(getTempDirPath(), getLanguage(),
 				runOptions.grammarFileName, runOptions.grammarStr, false, options.toArray(new String[0]));
 
@@ -185,7 +202,7 @@ public abstract class RuntimeRunner implements AutoCloseable {
 			return compiledState;
 		}
 
-		writeFile(getTempDirPath(), "input", runOptions.input);
+		writeInputFile(runOptions);
 
 		return execute(runOptions, compiledState);
 	}
@@ -231,6 +248,8 @@ public abstract class RuntimeRunner implements AutoCloseable {
 		outputFileST.add("showDFA", runOptions.showDFA);
 		outputFileST.add("useListener", runOptions.useListener);
 		outputFileST.add("useVisitor", runOptions.useVisitor);
+		outputFileST.add("predictionMode", runOptions.predictionMode);
+		outputFileST.add("buildParseTree", runOptions.buildParseTree);
 		addExtraRecognizerParameters(outputFileST);
 		writeFile(getTempDirPath(), getTestFileWithExt(), outputFileST.render());
 	}
@@ -239,7 +258,8 @@ public abstract class RuntimeRunner implements AutoCloseable {
 		return startRuleName;
 	}
 
-	protected void addExtraRecognizerParameters(ST template) {}
+	protected void addExtraRecognizerParameters(ST template) {
+	}
 
 	private boolean initAntlrRuntimeIfRequired(RunOptions runOptions) {
 		String language = getLanguage();
@@ -282,6 +302,10 @@ public abstract class RuntimeRunner implements AutoCloseable {
 		return new CompiledState(generatedState, null);
 	}
 
+	protected void writeInputFile(RunOptions runOptions) {
+		writeFile(getTempDirPath(), InputFileName, runOptions.input);
+	}
+
 	protected ExecutedState execute(RunOptions runOptions, CompiledState compiledState) {
 		String output = null;
 		String errors = null;
@@ -297,12 +321,11 @@ public abstract class RuntimeRunner implements AutoCloseable {
 				args.addAll(Arrays.asList(extraRunArgs));
 			}
 			args.add(getExecFileName());
-			args.add("input");
+			args.add(InputFileName);
 			ProcessorResult result = Processor.run(args.toArray(new String[0]), getTempDirPath(), getExecEnvironment());
 			output = result.output;
 			errors = result.errors;
-		}
-		catch (InterruptedException | IOException e) {
+		} catch (InterruptedException | IOException e) {
 			exception = e;
 		}
 		return new ExecutedState(compiledState, output, errors, exception);
@@ -316,11 +339,10 @@ public abstract class RuntimeRunner implements AutoCloseable {
 		String cmd = String.join(" ", command);
 		try {
 			return Processor.run(command, workPath);
-		}
-		catch (InterruptedException | IOException e) {
-			String msg = "command \""+cmd+"\"\n  in "+workPath+" failed";
-			if ( description != null ) {
-				msg += ":\n  can't "+description;
+		} catch (InterruptedException | IOException e) {
+			String msg = "command \"" + cmd + "\"\n  in " + workPath + " failed";
+			if (description != null) {
+				msg += ":\n  can't " + description;
 			}
 			throw new Exception(msg, e);
 		}
@@ -332,8 +354,7 @@ public abstract class RuntimeRunner implements AutoCloseable {
 			if (dirFile.exists()) {
 				try {
 					deleteDirectory(dirFile);
-				}
-				catch (IOException e) {
+				} catch (IOException e) {
 					e.printStackTrace();
 				}
 			}
